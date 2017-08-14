@@ -1,0 +1,11 @@
+{
+    "name": "rookiejin/swoole",
+    "version":"0.3",
+    "license": "MIT",
+    "require": {},
+    "autoload":{
+        "psr-4":{
+            "Rookiejin\\Swoole\\":"src/"
+        }
+    }
+}
