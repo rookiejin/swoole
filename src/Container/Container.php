@@ -10,99 +10,222 @@ namespace Rookiejin\Swoole\Container;
 
 
 use Psr\Container\ContainerInterface;
+use Rookiejin\Swoole\Application;
 use Rookiejin\Swoole\Exception\NotFoundException;
 use Rookiejin\Swoole\Exception\RuntimeException;
 
-class Container implements ContainerInterface
+class Container implements ContainerInterface, \ArrayAccess
 {
 
-    protected $instance = [] ;
+    /**
+     * @var array
+     */
+    protected $instance = [];
 
-    protected $alias = [] ;
+    /**
+     * @var array
+     */
+    protected $alias = [];
 
+    /**
+     * @var Application
+     */
+    public static $self = null;
+
+    /**
+     * @return Application
+     * @throws RuntimeException
+     */
+    public static function getInstance($id = null)
+    {
+        if (is_null(static::$self)) {
+            throw new RuntimeException('application has not been bootstraped');
+        }
+
+        if (is_string($id)) {
+            return static::$self->get($id);
+        }
+
+        return static::$self;
+    }
+
+    /**
+     * @param string $id
+     * @return mixed|object
+     * @throws NotFoundException
+     */
     public function get($id)
     {
-        if($this->has($id)){
-            return $this->instance [$id];
+        if ($this->hasAlias($id)) {
+            $id = $this->getAlias($id);
         }
-        if(class_exists($id)){
+        if ($this->has($id)) {
+            return $this->instance [ $id ];
+        }
+        if (class_exists($id)) {
             return $this->make($id);
         }
         throw new NotFoundException("the {$id} not found in the container");
     }
 
+    /**
+     * @param string $id
+     * @return bool
+     */
     public function has($id)
     {
-        return isset($this->instance[$id]) ? true : false ;
+        return isset($this->instance[ $id ]) ? true : false;
     }
 
 
-    public function make($class)
+    /**
+     * 别名中只保存对象的名字，不保存对象的实例，
+     * 如果第二个参数是实例，则绑定到instance上面
+     *
+     * @param $alias
+     * @param $needle mix|object|string
+     * @return $this
+     */
+    public function setAlias($alias, $needle)
     {
-        if(is_string($class) && $this->has($class)){
+        if (is_object($needle)) {
+            $needle = get_class($needle);
+        }
+        if (is_string($needle) && !$this->has($needle)) {
+            $this->make($needle);
+        }
+        $this->alias [ $alias ] = $needle;
+    }
+
+
+    /**
+     * @param $alias
+     * @return mixed
+     */
+    public function getAlias($alias)
+    {
+        if ($this->hasAlias($alias)) {
+            return $this->alias [ $alias ];
+        }
+    }
+
+    /**
+     * @param $alias
+     * @return bool
+     */
+    public function hasAlias($alias)
+    {
+        return isset($this->alias[ $alias ]) ? true : false;
+    }
+
+
+    /**
+     * @param mixed $offset
+     * @return bool
+     */
+    public function offsetExists($offset)
+    {
+        return $this->has($offset);
+    }
+
+    /**
+     * @param mixed $offset
+     * @return mixed|object
+     */
+    public function offsetGet($offset)
+    {
+        return $this->get($offset);
+    }
+
+    /**
+     * @param mixed $offset
+     * @param mixed $value
+     * @return $this
+     */
+    public function offsetSet($offset, $value)
+    {
+        if (is_string($value) && class_exists($value)) {
+            $this->instance [ $offset ] = $this->make($value);
+        } elseif (is_object($value)) {
+            $this->instance [ $offset ] = $value;
+        } elseif ($value instanceof \Closure) {
+            $this->instance [ $offset ] = $value();
+        }
+
+        return $this;
+    }
+
+    public function offsetUnset($offset)
+    {
+        if ($this->has($offset)) {
+            $this->instance [ $offset ] = null;
+            unset($this->instance [ $offset ]);
+        }
+
+        return $this;
+    }
+
+    /**
+     * @param $class
+     * @return mixed|object $class
+     * @throws RuntimeException
+     */
+    public function make($class, $userParams = [])
+    {
+        if (is_string($class) && $this->has($class)) {
             return $this->get($class);
         }
-        if($this->alias($class) !== null){
-            if(is_object($this->alias[$class])){
-                return $this->alias[$class];
-            }else{
-                $class = $this->alias [$class];
-            }
-        }
-        $reflector = new \ReflectionClass($class) ;
-        if(!$reflector->isInstantiable()){
+        $reflector = new \ReflectionClass($class);
+        if (!$reflector->isInstantiable()) {
             throw new RuntimeException("can`t instantiate of class::" . $class);
         }
 
         $construct = $reflector->getConstructor();
-        if(is_null($construct)){
-            return new $class ;
+
+        if (is_null($construct)) {
+            $newClass = new $class;
+        } else {
+            $params = $construct->getParameters();
+
+            $dependencies = $this->getDependencies($params,$userParams);
+
+            $newClass = $reflector->newInstanceArgs($dependencies);
         }
+        $this->offsetSet($class, $newClass);
 
-        $params = $construct->getParameters() ;
-
-        $dependencies = $this->getDependencies($params);
-
-        $newClass = $reflector->newInstanceArgs($dependencies);
-
-        $this->instance[$class] = $newClass ;
-
-        return $newClass ;
+        return $newClass;
     }
 
 
-    public function getDependencies(array $params)
+    public function getDependencies(array $params,$userParams = [])
     {
-        $dependencies = [] ;
-        foreach ($params as $param){
+        $dependencies = [];
+        foreach ($params as $param) {
             /**
              * @var \ReflectionClass $dependy
              */
-            $dependy = $param->getClass() ;
-            if(is_null($dependy)){
-                $dependencies [] = $this->resoveNonClass($param);
+            $dependy = $param->getClass();
+            $name = $param->getName();
+            if(isset($userParams[$name])){
+                $dependencies [] = $userParams [$name];
             }else{
-                $dependencies [] = $this->make($dependy->name);
+                if (is_null($dependy)) {
+                    $dependencies [] = $this->resoveNonClass($param);
+                } else {
+                    $dependencies [] = $this->make($dependy->name);
+                }
             }
         }
 
-        return $dependencies ;
+        return $dependencies;
     }
 
     public function resoveNonClass(\ReflectionParameter $parameter)
     {
-        if($parameter->isDefaultValueAvailable()){
-            return $parameter->getDefaultValue() ;
+        if ($parameter->isDefaultValueAvailable()) {
+            return $parameter->getDefaultValue();
         }
-        throw new RuntimeException($parameter->getName() . "must be not null");
     }
 
-    public function alias($exceped ,$alias = null)
-    {
-        if(is_null($alias)){
-            return isset($this->alias[$exceped]) ? $this->alias [$exceped] : null ;
-        }
-        $this->alias [$exceped] = $alias ;
-        return $this ;
-    }
+
 }
