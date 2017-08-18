@@ -10,6 +10,7 @@ namespace Rookiejin\Swoole\Server;
 
 
 use Rookiejin\Swoole\Application;
+use Rookiejin\Swoole\Exception\RuntimeException;
 use Rookiejin\Swoole\Helper\Dispatcher;
 use Rookiejin\Swoole\Helper\Str;
 use Swoole\Http\Request;
@@ -97,9 +98,17 @@ class HttpServer implements Server, ServerEvent
         }
     }
 
-    public function onMasterStart()
+    public function onMasterStart(\Swoole\Http\Server $server)
     {
-        return true; 
+        if(is_null($this->master_pid_file)){
+            $this->master_pid_file = "/tmp/swoole.{$this->port}.pid";
+        }
+        try{
+            swoole_async_writefile($this->master_pid_file ,$server->master_pid );
+        }catch (\Exception $e){
+            throw new RuntimeException("the master pid file :: {$this->master_pid_file} is not writeable");
+        }
+        return true;
     }
 
     public function onManagerStart()
