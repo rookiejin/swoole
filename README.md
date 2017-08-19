@@ -23,6 +23,10 @@
     └── vendor  composer 仓库
 ## 示例： 
 
+* 安装 
+```php 
+    composer require rookiejin/swoole
+```
 -  index.php 
 ```php
     <?php 
