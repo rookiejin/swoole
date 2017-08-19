@@ -11,28 +11,12 @@ namespace Rookiejin\Swoole\Helper;
 
 class Str
 {
-    /**
-     * @param array | string $str
-     * @return bool
-     */
-    public static function check($str) : bool
+    public static function obj2str($object)
     {
-        if(empty($str) && !is_numeric($str)){
-            return true;
+        $str = "";
+        foreach ($object as $key => $val){
+            $str .= "{$key} => {$val} " . PHP_EOL ;
         }
-        return false ;
-    }
-
-    /**
-     * @param array $arr
-     * @param       $key
-     * @return bool
-     */
-    public static function checkExist(array $arr,$key) : bool
-    {
-        if(isset($arr[$key]) && self::check($arr[$key])){
-            return true ;
-        }
-        return false ;
+        return $str;
     }
 }

@@ -12,6 +12,7 @@ namespace Rookiejin\Swoole;
 use Rookiejin\Swoole\Config\Config;
 use Rookiejin\Swoole\Container\Container;
 use Rookiejin\Swoole\Exception\RuntimeException;
+use Rookiejin\Swoole\Http\Router;
 use Rookiejin\Swoole\Server\HttpServer;
 use Rookiejin\Swoole\Server\Server;
 
@@ -47,7 +48,8 @@ class Application extends Container
         $this->registerObject();
 
         $this->loadConfig();
-        
+
+        $this->initRouter();
     }
 
     protected function registerPaths()
@@ -64,6 +66,7 @@ class Application extends Container
     {
         $class = [
             'config' => Config::class ,
+            'router' => Router::class ,
         ];
         foreach ($class as $key => $val){
             $this->setAlias($key , $val);
@@ -76,9 +79,18 @@ class Application extends Container
         Config::load($this->config_path);
     }
 
+    public function initRouter()
+    {
+        $router_config = $this->config->get('router');
+        /**
+         * @var Router
+         */
+        $this->router->init($router_config);
+    }
+    
+
     public function run()
     {
-
         $this->server = $this->make(HttpServer::class,['config'=>['setting' => ['work_number' => '20']]]);
         $this->server->run();
     }

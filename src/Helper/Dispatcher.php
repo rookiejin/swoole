@@ -37,6 +37,9 @@ class Dispatcher
         if($reflect->getNumberOfParameters() > 0){
             return $reflect->invokeArgs(isset($class)?$class:null,$vars);
         }
-        throw new NotFoundException("method or class not found::{$method}");
+        elseif(!isset($class)){
+            throw new NotFoundException("method or class not found::" . (is_string($method) ? $method : Str::obj2str($method) ));
+        }
+        return $reflect->invoke($class);
     }
 }

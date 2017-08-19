@@ -227,5 +227,8 @@ class Container implements ContainerInterface, \ArrayAccess
         }
     }
 
-
+    public function __get($key)
+    {
+        return $this->get($key);
+    }
 }
