@@ -12,10 +12,10 @@ namespace Rookiejin\Swoole;
 use Rookiejin\Swoole\Config\Config;
 use Rookiejin\Swoole\Container\Container;
 use Rookiejin\Swoole\Exception\InitException;
+use Rookiejin\Swoole\Helper\Memory;
 use Rookiejin\Swoole\Http\Router;
 use Rookiejin\Swoole\Log\Log;
 use Rookiejin\Swoole\Server\HttpServer;
-use Rookiejin\Swoole\Server\Server;
 
 class Application extends Container
 {
@@ -28,6 +28,8 @@ class Application extends Container
     protected $config_path = null ;
 
     protected $debug = false ;
+
+    protected $count = [] ;
 
     /**
      * @var HttpServer
@@ -96,7 +98,14 @@ class Application extends Container
             Log::debug("router loaded");
         }
     }
-    
+
+    /**
+     * 测试共享内存
+     */
+    public function getCount()
+    {
+        return $this->count ++ ;
+    }
 
     public function run()
     {

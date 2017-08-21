@@ -41,7 +41,7 @@ class Request
     /**
      * @var Router
      */
-    protected $router ;
+    protected $router;
 
     const EOF = "\r\n\r\n";
 
@@ -54,8 +54,8 @@ class Request
         isset($request->_cookies) && $this->_cookies = $request->cookie;
         $this->_raw    = $request->rawContent();
         $this->_server = $request->server;
-        $this->router = Application::getInstance()->make(Router::class);
-        $response->end( $this->router->dispatch( $this ) );
+        $this->router  = Application::getInstance()->make(Router::class);
+        $response->end($this->router->dispatch($this));
 //        $response->end(json_encode($request));
     }
 
@@ -151,17 +151,17 @@ class Request
         return null;
     }
 
-    public function cookie($key = null,$default = null)
+    public function cookie($key = null, $default = null)
     {
-        if(is_null($key)){
+        if (is_null($key)) {
             return CookieFilter::parse($this->_cookies);
         }
 
-        if(isset($this->_cookies[$key])){
-            return CookieFilter::parse($this->_cookies[$key]);
+        if (isset($this->_cookies[ $key ])) {
+            return CookieFilter::parse($this->_cookies[ $key ]);
         }
-        if(is_null($key)){
-            return is_null($default) ?: $default ;
+        if (is_null($key)) {
+            return is_null($default) ?: $default;
         }
     }
 

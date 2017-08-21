@@ -11,13 +11,23 @@ namespace Rookiejin\Swoole\Hook;
 
 class Hook
 {
-    private static $hooks ;
+    private $hooks ;
 
     /**
      * @param       $hook
      * @param array $todo
      */
-    public static function add($hook, $todo)
+    public function add($hook, $todo)
+    {
+        
+    }
+
+    public function delete()
+    {
+        
+    }
+
+    public function fire()
     {
 
     }

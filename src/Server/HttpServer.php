@@ -9,9 +9,13 @@
 namespace Rookiejin\Swoole\Server;
 
 
+use Rookiejin\Swoole\Application;
+use Rookiejin\Swoole\Config\Config;
 use Rookiejin\Swoole\Exception\InitException;
 use Rookiejin\Swoole\Helper\Collection;
 use Rookiejin\Swoole\Helper\Dispatcher;
+use Rookiejin\Swoole\Helper\Memory;
+use Rookiejin\Swoole\Log\Log;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 
@@ -40,6 +44,8 @@ class HttpServer implements Server, ServerEvent
     private $socket_type = SWOOLE_SOCK_TCP;
 
     private $mode = SWOOLE_PROCESS;
+
+    private $debug = false ;
 
     /**
      * HttpServer constructor.
@@ -70,6 +76,11 @@ class HttpServer implements Server, ServerEvent
         }
         if (isset($config['port']) && !empty($config['port'])) {
             $this->port = $config ['port'];
+        }
+
+        if( !empty($config ['debug']) )
+        {
+            $this->debug = $config ['debug'];
         }
     }
 
@@ -102,6 +113,10 @@ class HttpServer implements Server, ServerEvent
         if(is_null($this->master_pid_file)){
             $this->master_pid_file = "/tmp/swoole.{$this->port}.pid";
         }
+        if($this->debug)
+        {
+            Log::debug("server master started::pid\t" . $server->master_pid );
+        }
         try{
             swoole_async_writefile($this->master_pid_file ,$server->master_pid );
         }catch (\Exception $e){
@@ -115,8 +130,13 @@ class HttpServer implements Server, ServerEvent
         return true;
     }
 
-    public function onWorkerStart()
+    public function onWorkerStart(\Swoole\Http\Server $server)
     {
+        if($this->debug)
+        {
+            Log::debug("worker_id :: " . $server->worker_id);
+        }
+
         return true;
     }
 
@@ -127,10 +147,18 @@ class HttpServer implements Server, ServerEvent
 
     public function onRequest(Request $request,Response $response)
     {
+        if($this->debug)
+        {
+            Log::debug([
+                'uri' => $request->server ['request_uri'] ,
+                'method' => $request->server ['request_method'] ,
+                'worker_id' => $this->server->worker_id,
+            ]);
+        }
         /**
          * @var Response
          */
-        $res = Dispatcher::dispatch(\Rookiejin\Swoole\Http\Request::class,'request',$request , $response);
+        Dispatcher::dispatch(\Rookiejin\Swoole\Http\Request::class,'request',$request , $response);
     }
     
     /**

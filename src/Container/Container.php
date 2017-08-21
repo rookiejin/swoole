@@ -196,6 +196,16 @@ class Container implements ContainerInterface, \ArrayAccess
         return $newClass;
     }
 
+    /**
+     * 管理一次性对象  专门针对一个请求的对象管理，
+     * @param       $class
+     * @param array $userParams
+     */
+    public function clone($class,$userParams = [])
+    {
+        
+    }
+
 
     public function getDependencies(array $params,$userParams = [])
     {
