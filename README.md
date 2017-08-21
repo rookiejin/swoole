@@ -105,6 +105,11 @@
 
 * ... 暂时没想到
 
+# 开发相关 
+
+* 暂时代码都提交到master分支，等稳定了开个develop分支，master分支设为保护状态 
+* (简单的开发手册)[https://github.com/rookiejin/swoole/issues/1]
+
 
 
 
