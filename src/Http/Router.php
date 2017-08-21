@@ -11,7 +11,7 @@ namespace Rookiejin\Swoole\Http;
 
 use Rookiejin\Swoole\Application;
 use Rookiejin\Swoole\Exception\InitException;
-use Rookiejin\Swoole\Exception\RuntimeException;
+use Rookiejin\Swoole\Helper\Collection;
 use Rookiejin\Swoole\Helper\Dispatcher;
 use Swoole\Http\Server;
 
@@ -25,10 +25,15 @@ class Router
     protected $allow_method = ['GET','POST','PUT','DELETE','HEAD','PATCH','OPTIONS'];
 
 
-    public function init(array $config)
+    public function init(Collection $config)
     {
         $this->routes = $config ;
         $this->routes = $this->check() ;
+    }
+
+    public function getRoutes()
+    {
+        return $this->routes ;
     }
 
     /**
@@ -36,14 +41,14 @@ class Router
      */
     private function check()
     {
-        $routes = [];
+        $routes = new Collection();
         foreach ($this->routes as $uri => $route)
         {
             $newRoute = [];
 
             if(count($route) < 2)
             {
-                throw new RuntimeException("路由配置错误:" . __CLASS__ . "::" . __METHOD__ . "{$uri}");
+                throw new InitException("路由配置错误:" . __CLASS__ . "::" . __METHOD__ . "{$uri}");
             }
 
             if(is_string($route[0]))
@@ -58,18 +63,18 @@ class Router
                     $route[0] [$key] = strtoupper($method);
                     if(! in_array($route[0] [$key] , $this->allow_method))
                     {
-                        throw new RuntimeException("路由方法配置错误::" . $method);
+                        throw new InitException("路由方法配置错误::" . $method);
                     }
                 }
             }
             else{
-                throw new RuntimeException("路由配置错误::" . $route [0]) ;
+                throw new InitException("路由配置错误::" . $route [0]) ;
             }
 
             $newRoute ['method'] = $route [0];
 
             if(strstr($route[1],'@') === false){
-                throw new RuntimeException("路由配置错误:" . __CLASS__ . "::" . __METHOD__ . "{$uri}");
+                throw new InitException("路由配置错误:" . __CLASS__ . "::" . __METHOD__ . "{$uri}");
             }
 
             list($controller,$action) = explode('@',$route[1]) ;
@@ -125,4 +130,5 @@ class Router
         }
         throw new HttpNotFoundException("404 Notfound");
     }
+
 }

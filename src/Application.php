@@ -11,8 +11,9 @@ namespace Rookiejin\Swoole;
 
 use Rookiejin\Swoole\Config\Config;
 use Rookiejin\Swoole\Container\Container;
-use Rookiejin\Swoole\Exception\RuntimeException;
+use Rookiejin\Swoole\Exception\InitException;
 use Rookiejin\Swoole\Http\Router;
+use Rookiejin\Swoole\Log\Log;
 use Rookiejin\Swoole\Server\HttpServer;
 use Rookiejin\Swoole\Server\Server;
 
@@ -56,7 +57,7 @@ class Application extends Container
     {
         $config_path = $this->app_path . '..' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR ;
         if(! is_dir($config_path)){
-            throw new RuntimeException('config dir is not exists') ;
+            throw new InitException('config dir is not exists') ;
         }
         $this->config_path = realpath( $config_path ) ;
     }
@@ -77,21 +78,29 @@ class Application extends Container
     protected function loadConfig()
     {
         Config::load($this->config_path);
+        if($this->get('config')->app ['debug'])
+        {
+            Log::debug("config loaded");
+        }
     }
 
     public function initRouter()
     {
-        $router_config = $this->config->get('router');
+        $router_config = $this->config->router ;
         /**
          * @var Router
          */
         $this->router->init($router_config);
+        if($this->get('config')->app ['debug'])
+        {
+            Log::debug("router loaded");
+        }
     }
     
 
     public function run()
     {
-        $this->server = $this->make(HttpServer::class,['config'=>['setting' => ['work_number' => '20']]]);
+        $this->server = $this->make(HttpServer::class, ['config' => $this->config->server]);
         $this->server->run();
     }
 }

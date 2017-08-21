@@ -9,10 +9,9 @@
 namespace Rookiejin\Swoole\Server;
 
 
-use Rookiejin\Swoole\Application;
-use Rookiejin\Swoole\Exception\RuntimeException;
+use Rookiejin\Swoole\Exception\InitException;
+use Rookiejin\Swoole\Helper\Collection;
 use Rookiejin\Swoole\Helper\Dispatcher;
-use Rookiejin\Swoole\Helper\Str;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
 
@@ -53,7 +52,7 @@ class HttpServer implements Server, ServerEvent
         $this->initServer();
     }
 
-    protected function configure(array $config)
+    protected function configure(Collection $config)
     {
         if (isset($config['process_name']) && !empty($config ['process_name'])) {
             $this->process_name = $config ['process_name'];
@@ -106,7 +105,7 @@ class HttpServer implements Server, ServerEvent
         try{
             swoole_async_writefile($this->master_pid_file ,$server->master_pid );
         }catch (\Exception $e){
-            throw new RuntimeException("the master pid file :: {$this->master_pid_file} is not writeable");
+            throw new InitException("the master pid file :: {$this->master_pid_file} is not writeable");
         }
         return true;
     }

@@ -11,8 +11,8 @@ namespace Rookiejin\Swoole\Container;
 
 use Psr\Container\ContainerInterface;
 use Rookiejin\Swoole\Application;
+use Rookiejin\Swoole\Exception\InitException;
 use Rookiejin\Swoole\Exception\NotFoundException;
-use Rookiejin\Swoole\Exception\RuntimeException;
 
 class Container implements ContainerInterface, \ArrayAccess
 {
@@ -34,12 +34,12 @@ class Container implements ContainerInterface, \ArrayAccess
 
     /**
      * @return Application
-     * @throws RuntimeException
+     * @throws InitException
      */
     public static function getInstance($id = null)
     {
         if (is_null(static::$self)) {
-            throw new RuntimeException('application has not been bootstraped');
+            throw new InitException('application has not been bootstraped');
         }
 
         if (is_string($id)) {
@@ -168,7 +168,7 @@ class Container implements ContainerInterface, \ArrayAccess
     /**
      * @param $class
      * @return mixed|object $class
-     * @throws RuntimeException
+     * @throws InitException
      */
     public function make($class, $userParams = [])
     {
@@ -177,7 +177,7 @@ class Container implements ContainerInterface, \ArrayAccess
         }
         $reflector = new \ReflectionClass($class);
         if (!$reflector->isInstantiable()) {
-            throw new RuntimeException("can`t instantiate of class::" . $class);
+            throw new InitException("can`t instantiate of class::" . $class);
         }
 
         $construct = $reflector->getConstructor();

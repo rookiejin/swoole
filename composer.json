@@ -1,8 +1,10 @@
 {
     "name": "rookiejin/swoole",
-    "version":"0.3",
+    "version":"0.3.1",
     "license": "MIT",
-    "require": {},
+    "require": {
+        "psr/log":"1.0.2"
+    },
     "autoload":{
         "psr-4":{
             "Rookiejin\\Swoole\\":"src/"

@@ -10,33 +10,10 @@ namespace Rookiejin\Swoole\Config;
 
 
 use Rookiejin\Swoole\Application;
+use Rookiejin\Swoole\Helper\Collection;
 
-class Config implements \ArrayAccess
+class Config
 {
-
-    public function offsetExists($offset)
-    {
-        return $this->has($offset);
-    }
-
-    public function offsetGet($offset)
-    {
-        return $this->get($offset);
-    }
-
-    public function offsetSet($offset, $value)
-    {
-        return $this->set($offset, $value);
-    }
-
-    public function offsetUnset($offset)
-    {
-        if ($this->has($offset)) {
-            $this->config [ $offset ] = null;
-            unset($this->config[ $offset ]);
-        }
-    }
-
     public $config = [];
 
     public function get($key)
@@ -44,13 +21,18 @@ class Config implements \ArrayAccess
         if ($this->has($key)) {
             return $this->config[ $key ];
         }
-
         return null;
     }
 
     public function set($key, $value)
     {
-        $this->config [ $key ] = $value;
+        if(is_array($value))
+        {
+            $this->config [$key] = new Collection($value);
+        }
+        else{
+            $this->config [$key] = [$value];
+        }
     }
 
     public function has($key)
@@ -75,6 +57,7 @@ class Config implements \ArrayAccess
                 }
             }
         }
+        unset($dirs);
     }
 
     /**
