@@ -6,6 +6,9 @@
     
     本项目是一个运行在 php7 + swoole 环境中的 纯异步 php 框架 ， 已经实现 DI/MVC 分层/自定义路由/热启动等功能
     即将实现的功能在底部features
+# 基本架构图
+
+![image](https://github.com/rookiejin/swoole/raw/master/images/app.png)
 ## 项目结构: 
     ├── app 主目录 
     │   ├── Controller 控制器目录 可以自定义
