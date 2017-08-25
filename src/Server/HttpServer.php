@@ -155,12 +155,14 @@ class HttpServer implements Server, ServerEvent
                 'worker_id' => $this->server->worker_id,
             ]);
         }
-        /**
-         * @var Response
-         */
-        Dispatcher::dispatch(\Rookiejin\Swoole\Http\Request::class,'request',$request , $response);
+        try{
+            Dispatcher::dispatch(\Rookiejin\Swoole\Http\Request::class,'request',$request , $response);
+        }catch (\Exception $e){
+            $response->status(500);
+            $response->end($e->getMessage());
+        }
     }
-    
+
     /**
      * @param $setting
      * @return mixed

@@ -200,10 +200,16 @@ class Container implements ContainerInterface, \ArrayAccess
      * 管理一次性对象  专门针对一个请求的对象管理，
      * @param       $class
      * @param array $userParams
+     * @return object $class ;
      */
-    public function clone($class,$userParams = [])
+    public function cloneObject($class,$userParams = [])
     {
-        
+        $class = $this->make($class,$userParams);
+        if(method_exists($class,'bootstrap'))
+        {
+            $class->bootstrap();
+        }
+        return $class ;
     }
 
 

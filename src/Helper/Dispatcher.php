@@ -28,7 +28,7 @@ class Dispatcher
     public static function invokeMethod($method,$vars)
     {
         if(is_array($method)){
-            $class = is_object($method [0]) ? $method [0] : Application::getInstance()->make($method[0]);
+            $class = is_object($method [0]) ? $method [0] : Application::getInstance()->cloneObject($method[0]);
             $reflect = new \ReflectionMethod($class,$method[1]);
         }else{
             $reflect = new \ReflectionMethod($method);
