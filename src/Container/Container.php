@@ -204,12 +204,23 @@ class Container implements ContainerInterface, \ArrayAccess
      */
     public function cloneObject($class,$userParams = [])
     {
-        $class = $this->make($class,$userParams);
-        if(method_exists($class,'bootstrap'))
+        if($this->has($class))
         {
-            $class->bootstrap();
+            $class = clone $this->get($class) ;
+            // 该步骤应当放到请求结束去执行.
+            if(method_exists($class ,'bootstrap'))
+            {
+                $class->bootstrap();
+            }
+            if(!empty($userParams) && method_exists($class,'__construct'))
+            {
+                call_user_func_array([$class,'__construct'],$userParams);
+            }
+            return $class ;
         }
-        return $class ;
+        else{
+            return $this->make($class,$userParams) ;
+        }
     }
 
 

@@ -43,20 +43,47 @@ class Request
      */
     protected $router;
 
-    const EOF = "\r\n\r\n";
+    /**
+     * @var Response
+     */
+    protected $response;
 
-    public function request(SwRequest $request, \Swoole\Http\Response $response)
+
+    public function bootstrap()
     {
-        isset($request->_headers) && $this->_headers = $request->header;
+        $this->_get     = [];
+        $this->_post    = [];
+        $this->_cookies = [];
+        $this->_files   = [];
+        $this->_raw     = [];
+        $this->_method  = [];
+        $this->_headers = [];
+        $this->_session = [];
+        $this->_server  = null;
+    }
+
+    /**
+     * @param SwRequest  $request
+     */
+    public function __construct(SwRequest $request)
+    {
+        isset($request->headers) && $this->_headers = $request->header;
         isset($request->get) && $this->_get = $request->get;
-        isset($request->_post) && $this->_post = $request->post;
-        isset($request->_files) && $this->_files = $request->files;
-        isset($request->_cookies) && $this->_cookies = $request->cookie;
+        isset($request->post) && $this->_post = $request->post;
+        isset($request->files) && $this->_files = $request->files;
+        isset($request->cookie) && $this->_cookies = $request->cookie;
         $this->_raw    = $request->rawContent();
         $this->_server = $request->server;
-        $this->router  = Application::getInstance()->make(Router::class);
-        $response->end($this->router->dispatch($this));
-//        $response->end(json_encode($request));
+    }
+
+
+    // to resolve bugs 
+    public function response( \Swoole\Http\Response $response)
+    {
+        $this->router   = Application::getInstance()->make(Router::class);
+        $this->response = Application::getInstance()->cloneObject(Response::class, ['request' => $this ,'response' => $response]);
+        $this->response->respond($this->router->dispatch($this));
+        return null;
     }
 
     /**

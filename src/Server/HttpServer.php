@@ -11,6 +11,7 @@ namespace Rookiejin\Swoole\Server;
 
 use Rookiejin\Swoole\Application;
 use Rookiejin\Swoole\Config\Config;
+use Rookiejin\Swoole\Container\Context;
 use Rookiejin\Swoole\Exception\InitException;
 use Rookiejin\Swoole\Helper\Collection;
 use Rookiejin\Swoole\Helper\Dispatcher;
@@ -156,7 +157,8 @@ class HttpServer implements Server, ServerEvent
             ]);
         }
         try{
-            Dispatcher::dispatch(\Rookiejin\Swoole\Http\Request::class,'request',$request , $response);
+            Dispatcher::dispatch(Context::class,'request',$request,$response);
+//            Dispatcher::dispatch(\Rookiejin\Swoole\Http\Request::class,'request',$request , $response);
         }catch (\Exception $e){
             $response->status(500);
             $response->end($e->getMessage());

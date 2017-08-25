@@ -43,6 +43,22 @@ class Config
     public static function load($path)
     {
         $dirs   = scandir($path);
+        $total = count($dirs);
+        for($i = 2; $i < $total; $i ++)
+        {
+            if(is_dir( $path . DIRECTORY_SEPARATOR . $dirs [$i] ))
+            {
+                Config::load($path . DIRECTORY_SEPARATOR . $dirs [$i]) ;
+            }
+            else{
+
+            }
+
+        }
+
+
+
+
         foreach ($dirs as $key => $val) {
             if (!in_array($val, ['.', '..'])) {
                 if (is_dir($path . DIRECTORY_SEPARATOR . $val)) {
@@ -63,6 +79,7 @@ class Config
     /**
      * getSession => $config ['session'] [$key] ;
      * @param $key
+     * @return null
      */
     public function __get($key)
     {
