@@ -11,9 +11,11 @@ namespace Rookiejin\Swoole\Http;
 
 use Rookiejin\Swoole\Application;
 use Rookiejin\Swoole\Exception\InitException;
+use Rookiejin\Swoole\Exception\MethodNotAllowedException;
 use Rookiejin\Swoole\Helper\Collection;
 use Rookiejin\Swoole\Helper\Dispatcher;
 use Swoole\Http\Server;
+
 
 class Router
 {
@@ -24,11 +26,22 @@ class Router
 
     protected $allow_method = ['GET','POST','PUT','DELETE','HEAD','PATCH','OPTIONS'];
 
+    /**
+     * 默认不开启正则路由
+     * @var bool
+     */
+    protected $regex = false ;
+
 
     public function init(Collection $config)
     {
         $this->routes = $config ;
         $this->routes = $this->check() ;
+        $app = Application::getInstance('config')->app ;
+        if(isset($app ['regex']) && is_bool($app ['regex']))
+        {
+            $this->regex = $app ['regex'] ;
+        }
     }
 
     public function getRoutes()
@@ -44,10 +57,9 @@ class Router
         $routes = new Collection();
         foreach ($this->routes as $uri => $route)
         {
-
             // 解析 uri
             // ['pattern' => regex , 'labels' => ['id','name' ...]]
-            $uriWithPattern = Uri::parser($uri) ;
+            $uriWithPattern = Uri::parser($uri ,$this->regex) ;
 
             if(count($route) < 2)
             {
@@ -74,16 +86,16 @@ class Router
                 throw new InitException("路由配置错误::" . $route [0]) ;
             }
 
-            $uriObject = new Uri();
+            $routeObject = new Route();
 
-            $uriObject->setLabels($uriWithPattern ['labels']);
-            $uriObject->setMethod($route [0]) ;
-            $uriObject->setUri($uri);
+            $routeObject->setLabels($uriWithPattern ['labels']);
+            $routeObject->setMethod($route [0]) ;
+            $routeObject->setUri($uri);
 
             // 闭包
             if($route [1] instanceof \Closure)
             {
-                $uriObject->setCallAble($route [1]) ;
+                $routeObject->setCallAble($route [1]) ;
             }
             else{
                 // 类@Method
@@ -107,9 +119,9 @@ class Router
                     throw new InitException("控制器方法不存在::" . $controller . "::" . $action);
                 }
 
-                $uriObject->setCallAble([$controller,$action]);
+                $routeObject->setCallAble([$controller,$action]);
             }
-            $routes[$uriWithPattern['pattern']] = $uriObject ;
+            $routes[$uriWithPattern['pattern']] = $routeObject ;
         }
         return $routes ;
     }
@@ -126,37 +138,40 @@ class Router
         }
     }
 
-    public function parseUri($server)
-    {
-        return substr($server['request_uri'],1,strlen($server['request_uri']) - 1) ;
-    }
-
-    public function parseMethod($server)
-    {
-        return strtoupper($server['request_method']);
-    }
-
-    public function getRoute($uri,$method)
-    {
-        if(isset($this->routes[$uri]))
-        {
-            $uri = $this->routes[$uri];
-            if(in_array($method ,$uri ['method']))
-            {
-                return $uri ;
-            }
-        }
-        throw new HttpNotFoundException("404 NotFound");
-    }
-
-
+    /**
+     * @param array $server
+     *
+     * @return mixed
+     * @throws \Rookiejin\Swoole\Exception\MethodNotAllowedException
+     * @throws \Rookiejin\Swoole\Http\HttpNotFoundException
+     */
     public function match(array $server = [])
     {
+        $routes = $this->routes ;
+        if($this->regex)
+        {
+            // todo
+        }
+        else{
+            if(isset($routes[$server ['request_uri']]))
+            {
+                /**
+                 * @var \Rookiejin\Swoole\Http\Route
+                 */
+                $route = $routes [$server['request_uri']] ;
 
-
-
-
-        return null;
+                if(!in_array($server['request_method'] ,$route->getMethod()))
+                {
+                    throw new MethodNotAllowedException("RequestMethod {$server['request_method']} Not Allowed");
+                }
+                else{
+                    return $route ;
+                }
+            }
+            else{
+                throw new HttpNotFoundException("RequestUri {$server['request_uri']} Not Found");
+            }
+        }
     }
 
 }

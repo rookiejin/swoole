@@ -21,7 +21,7 @@ interface ContextInterface
     public function route();
 
     // 响应
-    public function response();
+    public function response( $response );
 
     // 结束生命周期
     public function kill();

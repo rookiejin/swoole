@@ -16,15 +16,24 @@ class Uri
 
     /**
      * @param string $uri
+     * @param bool $usingRegex
      * @return array
      */
-    public static function parser( string $uri )
+    public static function parser( string $uri, bool $usingRegex )
     {
 
         $labels = [] ;
-
+        //   解析成 /xxx/xxx/xxx [/] 这种格式
         $uri = (substr($uri , 0 ,1) === '/') ? $uri : '/' . $uri ;
 
+        if(!$usingRegex)
+        {
+            $uri = (substr($uri ,0,-1) === '/') ? substr($uri,0,strlen($uri) -1) : $uri ;
+            return [
+              'pattern' => $uri ,
+              'labels' => [],
+            ];
+        }
         $peaces = explode('/' ,$uri) ;
 
         foreach ($peaces as $key => $value)
@@ -56,56 +65,4 @@ class Uri
             'labels' => $labels
         ];
     }
-    protected $method = null;
-
-
-    public function setMethod($method)
-    {
-        $this->method = strtoupper( $method );
-    }
-
-    public function getMethod()
-    {
-        return $this->method ;
-    }
-
-
-    protected $uri = null;
-
-    public function getUri()
-    {
-        return $this->uri ;
-    }
-
-    public function setUri(string $uri)
-    {
-        $this->uri = $uri;
-    }
-
-    protected $labels = null;
-
-    public function getLabels()
-    {
-        return $this->labels ;
-    }
-
-    public function setLabels($labels)
-    {
-        $this->labels = $labels ;
-    }
-
-
-    protected $callable = null ;
-
-
-    public function setCallAble($callable)
-    {
-        $this->callable = $callable ;
-    }
-
-    public function getCallable()
-    {
-        return $this->callable ;
-    }
-
 }

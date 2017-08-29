@@ -38,7 +38,6 @@ class Context implements ContextInterface
      */
     protected $request;
 
-
     /**
      * @var Response
      */
@@ -53,6 +52,9 @@ class Context implements ContextInterface
     }
 
 
+    /**
+     * @return Route $route
+     */
     public function route()
     {
         /**
@@ -60,14 +62,10 @@ class Context implements ContextInterface
          */
         $router = Application::getInstance('router') ;
 
-        $route = $router->match($this->request->getServer());
-
-        return null ;
-    }
-
-    public function response()
-    {
-        
+        /**
+         * @var Route
+         */
+        return $router->match($this->request->getServer());
     }
 
     /**
@@ -93,6 +91,7 @@ class Context implements ContextInterface
     /**
      * @param SwRequest  $swRequest
      * @param SwResponse $swResponse
+     * @return null
      */
     public function request(SwRequest $swRequest ,SwResponse $swResponse)
     {
@@ -100,6 +99,29 @@ class Context implements ContextInterface
 
         $route = $this->route() ;
 
+        /**
+         * 这里应该是纯字符串 html 等等
+         */
+        $response = $route->execAction();
+
+        return $this->response( $response );
+    }
+
+
+    public function response($response)
+    {
+        /**
+         * 发送响应头
+         */
+        $this->response->sendHeader() ;
+
+        $this->response->sendCookies() ;
+
+        $this->response->sendStatus() ;
+
+        $this->response->respond($response);
+
+        return $this->kill();
     }
 
     /**
@@ -107,8 +129,7 @@ class Context implements ContextInterface
      */
     public function kill()
     {
-        // TODO: Implement kill() method.
+        return $this->clearInstance();
     }
-
 
 }

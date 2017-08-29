@@ -32,16 +32,6 @@ class Response
         $this->swResponse = $response ;
     }
 
-
-    public function bootstrap()
-    {
-        $this->headers    = [];
-        $this->statusCode = 200;
-        $this->cookies    = [];
-        $this->swResponse = null ;
-    }
-
-
     public function addHeader(array $headers)
     {
         $this->headers = array_merge($this->headers, $headers);
@@ -108,9 +98,24 @@ class Response
     }
 
 
-    public function respond()
+    public function sendHeader()
     {
+        $this->swResponse->header('Content-Type','text/html');
+    }
 
+    public function sendCookies()
+    {
+        $this->swResponse->cookie('testkey','testvalue',3600,'/','localhost');
+    }
+
+    public function sendStatus()
+    {
+        $this->swResponse->status(200);
+    }
+
+    public function respond($text)
+    {
+        $this->swResponse->end($text);
     }
 
 }

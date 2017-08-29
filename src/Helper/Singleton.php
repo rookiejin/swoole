@@ -99,5 +99,95 @@ trait Singleton
         return $dependencies;
     }
 
+    public static function invokeFunction($func,$params=[])
+    {
 
+        $ref = new \ReflectionFunction($func);
+        $args = [];
+        if($ref->getNumberOfParameters() > 0)
+        {
+            $paramters = $ref->getParameters();
+            foreach ($paramters as $parameter)
+            {
+                if(isset($params[$parameter->getName()]))
+                {
+                    $args [$parameter->getName()] = $params [$parameter->getName()];
+                }
+                else{
+                    if($parameter->isDefaultValueAvailable())
+                    {
+                        $args [$parameter->getName()] = $parameter->getDefaultValue();
+                    }
+                    else{
+                        $class = $parameter->getClass();
+                        if($class != null)
+                        {
+                            $class = static::getInstance()->make($class);
+                            $args[$parameter->getName()] = $class ;
+                        }
+                        else{
+                            throw new RuntimeException("invoke closure function arguments error:" . __CLASS__ . "::" . __METHOD__);
+                        }
+                    }
+                }
+            }
+        }
+        return $ref->invoke($args);
+    }
+
+    /**
+     * @unsupport static method
+     * @param       $method
+     * @param array $params
+     */
+    public static function invokeMethod($method, $params = [])
+    {
+        $controller = static::getInstance()->make($method[0]) ;
+        if(!method_exists($controller,$method [1]))
+        {
+            throw new RuntimeException('invoke method failed:' . $method[0] . "::" . $method[1] . ",method not exist");
+        }
+        $ref = new \ReflectionMethod($controller ,$method[1]);
+        $args = [];
+        if($ref->getNumberOfParameters() > 0)
+        {
+            $paramters = $ref->getParameters() ;
+            foreach ($paramters as $parameter)
+            {
+                if(isset($params[$parameter->getName()]))
+                {
+                    $args [$parameter->getName()] = $params [$parameter->getName()];
+                }
+                else{
+                    if($parameter->isDefaultValueAvailable())
+                    {
+                        $args [$parameter->getName()] = $parameter->getDefaultValue();
+                    }
+                    else{
+                        $class = $parameter->getClass();
+                        if($class != null)
+                        {
+                            $class = static::getInstance()->make($class);
+                            $args[$parameter->getName()] = $class ;
+                        }
+                        else{
+                            throw new RuntimeException("invoke method arguments error:" . $method[0] . "::" . $method[1]);
+                        }
+                    }
+                }
+            }
+        }
+        if(count($args) > 0)
+        {
+            return $ref->invokeArgs($controller ,$args);
+        }
+        else{
+            return $ref->invoke($controller);
+        }
+    }
+
+    public function clearInstance()
+    {
+        static::$instance = null ;
+    }
 }
