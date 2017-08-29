@@ -44,7 +44,10 @@ class Router
         $routes = new Collection();
         foreach ($this->routes as $uri => $route)
         {
-            $newRoute = [];
+
+            // 解析 uri
+            // ['pattern' => regex , 'labels' => ['id','name' ...]]
+            $uriWithPattern = Uri::parser($uri) ;
 
             if(count($route) < 2)
             {
@@ -71,27 +74,42 @@ class Router
                 throw new InitException("路由配置错误::" . $route [0]) ;
             }
 
-            $newRoute ['method'] = $route [0];
+            $uriObject = new Uri();
 
-            if(strstr($route[1],'@') === false){
-                throw new InitException("路由配置错误:" . __CLASS__ . "::" . __METHOD__ . "{$uri}");
-            }
+            $uriObject->setLabels($uriWithPattern ['labels']);
+            $uriObject->setMethod($route [0]) ;
+            $uriObject->setUri($uri);
 
-            list($controller,$action) = explode('@',$route[1]) ;
-
-            if(strstr($controller,'\\') === false)// 使用默认命名空间
+            // 闭包
+            if($route [1] instanceof \Closure)
             {
-                $controller = $this->defaultNamespace . $controller ;
+                $uriObject->setCallAble($route [1]) ;
             }
-            if(! class_exists($controller)){
-                throw new InitException("控制器不存在::" . $controller);
+            else{
+                // 类@Method
+                if(strstr($route [1], '@') === false)
+                {
+                    throw new InitException("路由配置错误:" . __CLASS__ . "::" . __METHOD__ . "{$uri}");
+                }
+
+                list($controller,$action) = explode('@',$route [1]) ;
+
+                if(strstr($controller,'\\') === false)
+                {
+                    $controller = $this->defaultNamespace . $controller ;
+                }
+                if(! class_exists($controller))
+                {
+                    throw new InitException("控制器不存在::" . $controller);
+                }
+                if(! method_exists($controller ,$action))
+                {
+                    throw new InitException("控制器方法不存在::" . $controller . "::" . $action);
+                }
+
+                $uriObject->setCallAble([$controller,$action]);
             }
-            if(! method_exists($controller ,$action)){
-                throw new InitException("控制器方法不存在::" . $controller . "::" . $action);
-            }
-            $newRoute ['controller'] = $controller ;
-            $newRoute ['action'] = $action ;
-            $routes[$uri] = $newRoute ;
+            $routes[$uriWithPattern['pattern']] = $uriObject ;
         }
         return $routes ;
     }
@@ -128,7 +146,17 @@ class Router
                 return $uri ;
             }
         }
-        throw new HttpNotFoundException("404 Notfound");
+        throw new HttpNotFoundException("404 NotFound");
+    }
+
+
+    public function match(array $server = [])
+    {
+
+
+
+
+        return null;
     }
 
 }

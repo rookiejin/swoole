@@ -8,15 +8,18 @@
 
 namespace Rookiejin\Swoole\Container;
 use Rookiejin\Swoole\Application;
+use Rookiejin\Swoole\Helper\Singleton;
 use Rookiejin\Swoole\Http\Request;
 use Rookiejin\Swoole\Http\Response;
+use Rookiejin\Swoole\Http\Route;
+use Rookiejin\Swoole\Http\Router;
 use Swoole\Http\Request as SwRequest;
 use Swoole\Http\Response as SwResponse;
 
 /**
  * Class Context
  * 全局共享Context .
- * 用于获取当前环境的上下文
+ * 用于获取当前环境的上下文, 这是 一个请求生命周期的单例 ，请求完成，单例释放。
  * 1. controller 中 -> context('request')->
  * 2. context('response')->setHeader();
  * 3. context('session')->set();
@@ -28,23 +31,43 @@ use Swoole\Http\Response as SwResponse;
 class Context implements ContextInterface
 {
 
-    protected $request;
-
-    protected $response;
-
-    public function __construct(SwRequest $request,SwResponse $response)
-    {
-        $this->request = $this->initRequest($request);
-        $this->response = $this->initResponse($response);
-    }
+    use Singleton;
 
     /**
-     * @return mixed
+     * @var Request
      */
-    public function init()
-    {
-        // todo
+    protected $request;
 
+
+    /**
+     * @var Response
+     */
+    protected $response;
+
+
+    public function init(SwRequest $request,SwResponse $response)
+    {
+        $this->request = $this->initRequest($request) ;
+
+        $this->response = $this->initResponse($response) ;
+    }
+
+
+    public function route()
+    {
+        /**
+         * @var Router
+         */
+        $router = Application::getInstance('router') ;
+
+        $route = $router->match($this->request->getServer());
+
+        return null ;
+    }
+
+    public function response()
+    {
+        
     }
 
     /**
@@ -54,10 +77,7 @@ class Context implements ContextInterface
      */
     protected function initRequest(SwRequest $swRequest)
     {
-        /**
-         * @var $request Request
-         */
-        return Application::getInstance()->cloneObject(Request::class,['request' => $swRequest]);
+        return $this->make(Request::class,['request' => $swRequest]) ;
     }
 
     /**
@@ -67,9 +87,20 @@ class Context implements ContextInterface
      */
     protected function initResponse(SwResponse $swResponse)
     {
-        return Application::getInstance()->cloneObject(Response::class,['response' => $swResponse]);
+        return $this->make(Response::class,['response' => $swResponse]);
     }
 
+    /**
+     * @param SwRequest  $swRequest
+     * @param SwResponse $swResponse
+     */
+    public function request(SwRequest $swRequest ,SwResponse $swResponse)
+    {
+        $this->init($swRequest ,$swResponse);
+
+        $route = $this->route() ;
+
+    }
 
     /**
      * @return mixed

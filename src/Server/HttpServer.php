@@ -46,7 +46,7 @@ class HttpServer implements Server, ServerEvent
 
     private $mode = SWOOLE_PROCESS;
 
-    private $debug = false ;
+    private $debug = false;
 
     /**
      * HttpServer constructor.
@@ -79,8 +79,7 @@ class HttpServer implements Server, ServerEvent
             $this->port = $config ['port'];
         }
 
-        if( !empty($config ['debug']) )
-        {
+        if (!empty($config ['debug'])) {
             $this->debug = $config ['debug'];
         }
     }
@@ -111,18 +110,19 @@ class HttpServer implements Server, ServerEvent
 
     public function onMasterStart(\Swoole\Http\Server $server)
     {
-        if(is_null($this->master_pid_file)){
+        if (is_null($this->master_pid_file)) {
             $this->master_pid_file = "/tmp/swoole.{$this->port}.pid";
         }
-        if($this->debug)
-        {
-            Log::debug("server master started::pid\t" . $server->master_pid );
+        if ($this->debug) {
+            Log::debug("server master started::pid\t" . $server->master_pid);
         }
-        try{
-            swoole_async_writefile($this->master_pid_file ,$server->master_pid );
-        }catch (\Exception $e){
+        try {
+            swoole_async_writefile($this->master_pid_file, $server->master_pid);
+        }
+        catch (\Exception $e) {
             throw new InitException("the master pid file :: {$this->master_pid_file} is not writeable");
         }
+
         return true;
     }
 
@@ -133,8 +133,7 @@ class HttpServer implements Server, ServerEvent
 
     public function onWorkerStart(\Swoole\Http\Server $server)
     {
-        if($this->debug)
-        {
+        if ($this->debug) {
             Log::debug("worker_id :: " . $server->worker_id);
         }
 
@@ -146,21 +145,22 @@ class HttpServer implements Server, ServerEvent
         return true;
     }
 
-    public function onRequest(Request $request,Response $response)
+    public function onRequest(Request $request, Response $response)
     {
-        if($this->debug)
-        {
+        if ($this->debug) {
             Log::debug([
-                'uri' => $request->server ['request_uri'] ,
-                'method' => $request->server ['request_method'] ,
+                'uri'       => $request->server ['request_uri'],
+                'method'    => $request->server ['request_method'],
                 'worker_id' => $this->server->worker_id,
             ]);
         }
-        try{
-            Dispatcher::dispatch(Context::class,'request',$request,$response);
-//            Dispatcher::dispatch(\Rookiejin\Swoole\Http\Request::class,'request',$request , $response);
-        }catch (\Exception $e){
+        try {
+            Dispatcher::dispatch(Context::class, 'request', $request, $response);
+        }
+        catch (\Exception $e) {
+
             $response->status(500);
+
             $response->end($e->getMessage());
         }
     }
