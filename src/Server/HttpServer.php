@@ -20,6 +20,7 @@ use Rookiejin\Swoole\Exception\RuntimeException;
 use Rookiejin\Swoole\Helper\Collection;
 use Rookiejin\Swoole\Helper\Dispatcher;
 use Rookiejin\Swoole\Helper\Memory;
+use Rookiejin\Swoole\Http\HttpNotFoundException;
 use Rookiejin\Swoole\Log\Log;
 use Swoole\Http\Request;
 use Swoole\Http\Response;
@@ -158,17 +159,31 @@ class HttpServer implements Server, ServerEvent
             ]);
         }
         try {
-            Context::getInstance()->request($request,$response);
+            $ctx = Context::getInstance();
+            $res = $ctx->request($request ,$response);
         }
         catch (RuntimeException $e) {
             $response->status(500) ;
-            $response->end($e->getMessage());
+            $res = $e->getMessage();
         }
         catch (\Exception $e)
         {
             list($status ,$message) = $this->handleException($e);
             $response->status($status);
-            $response->end($message);
+            $res = $e->getMessage();
+        }
+        finally{
+            if(isset($ctx))
+            {
+                $ctx->clearInstance();
+            }
+            if(isset($res))
+            {
+                $response->end($res);
+            }
+            else{
+                $response->end('');
+            }
         }
         return ;
     }
@@ -182,7 +197,7 @@ class HttpServer implements Server, ServerEvent
             {
                 return [405, $exception->getMessage()];
             }
-            if($exception instanceof NotFoundException)
+            if($exception instanceof NotFoundException || $exception instanceof HttpNotFoundException)
             {
                 return [404, $exception->getMessage()];
             }

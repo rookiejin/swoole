@@ -147,9 +147,7 @@ class Context implements ContextInterface
 
         $this->response->sendStatus() ;
 
-        $this->response->respond($response);
-
-        return $this->kill();
+        return $response ;
     }
 
     /**

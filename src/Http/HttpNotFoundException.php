@@ -9,7 +9,9 @@
 namespace Rookiejin\Swoole\Http;
 
 
-class HttpNotFoundException extends \Exception
+use Rookiejin\Swoole\Exception\HttpException;
+
+class HttpNotFoundException extends \Exception implements HttpException
 {
 
 }

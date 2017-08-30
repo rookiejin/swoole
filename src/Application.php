@@ -27,7 +27,7 @@ class Application extends Container
 
     protected $config_path = null ;
 
-    protected $debug = false ;
+    public $debug = false ;
 
     protected $count = [] ;
 
