@@ -38,9 +38,9 @@ class Router
         $this->routes = $config ;
         $this->routes = $this->check() ;
         $app = Application::getInstance('config')->app ;
-        if(isset($app ['regex']) && is_bool($app ['regex']))
+        if(isset($app ['route']['regex']) && is_bool($app ['route']['regex']))
         {
-            $this->regex = $app ['regex'] ;
+            $this->regex = $app ['route']['regex'] ;
         }
     }
 

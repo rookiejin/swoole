@@ -32,6 +32,16 @@ class Application extends Container
     protected $count = [] ;
 
     /**
+     * @var bool app 有没有被初始化
+     */
+    public $hasBootstrap = false;
+
+    /**
+     * @var bool 服务器有没有启动
+     */
+    public $hasStartedServer = false ;
+
+    /**
      * @var HttpServer
      */
     protected $server = null;
@@ -53,6 +63,8 @@ class Application extends Container
         $this->loadConfig();
 
         $this->initRouter();
+
+        $this->hasBootstrap = true ;
     }
 
     protected function registerPaths()
@@ -110,6 +122,7 @@ class Application extends Container
     public function run()
     {
         $this->server = $this->make(HttpServer::class, ['config' => $this->config->server]);
+        $this->hasStartedServer = true;
         $this->server->run();
     }
 }

@@ -1,6 +1,6 @@
 {
     "name": "rookiejin/swoole",
-    "version":"0.3.1",
+    "version":"0.3.3",
     "license": "MIT",
     "require": {
         "psr/log":"1.0.2"
@@ -8,6 +8,9 @@
     "autoload":{
         "psr-4":{
             "Rookiejin\\Swoole\\":"src/"
-        }
+        },
+        "files":[
+            "./src/Helper/helpers.php"
+        ]
     }
 }

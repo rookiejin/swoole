@@ -12,7 +12,11 @@ namespace Rookiejin\Swoole\Server;
 use Rookiejin\Swoole\Application;
 use Rookiejin\Swoole\Config\Config;
 use Rookiejin\Swoole\Container\Context;
+use Rookiejin\Swoole\Exception\HttpException;
 use Rookiejin\Swoole\Exception\InitException;
+use Rookiejin\Swoole\Exception\MethodNotAllowedException;
+use Rookiejin\Swoole\Exception\NotFoundException;
+use Rookiejin\Swoole\Exception\RuntimeException;
 use Rookiejin\Swoole\Helper\Collection;
 use Rookiejin\Swoole\Helper\Dispatcher;
 use Rookiejin\Swoole\Helper\Memory;
@@ -155,15 +159,40 @@ class HttpServer implements Server, ServerEvent
             ]);
         }
         try {
-            Dispatcher::dispatch(Context::class, 'request', $request, $response);
+            $ctx = new Context();
+            $ctx->request($request ,$response);
         }
-        catch (\Exception $e) {
-
-            $response->status(500);
-
+        catch (RuntimeException $e) {
+            $response->status(500) ;
             $response->end($e->getMessage());
         }
+        catch (\Exception $e)
+        {
+            list($status ,$message) = $this->handleException($e);
+            $response->status($status);
+            $response->end($message);
+        }
+        unset($ctx);
+        return ;
     }
+
+
+    public function handleException(\Exception $exception) : array
+    {
+        if($exception instanceof HttpException)
+        {
+            if($exception instanceof MethodNotAllowedException)
+            {
+                return [405, $exception->getMessage()];
+            }
+            if($exception instanceof NotFoundException)
+            {
+                return [404, $exception->getMessage()];
+            }
+        }
+        return [500,'server error'];
+    }
+    
 
     /**
      * @param $setting
