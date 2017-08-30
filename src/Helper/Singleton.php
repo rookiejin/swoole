@@ -17,11 +17,12 @@ trait Singleton
 
     protected $container = [];
 
+    public $i ;
+
     public static function getInstance()
     {
-        return is_null(static::$instance) ? (static::$instance = new static()) : static::$instance;
+        return is_null(self::$instance) ? new self() : self::$instance;
     }
-
 
     public function set($id ,$value)
     {
@@ -76,7 +77,11 @@ trait Singleton
         return $newClass ;
     }
 
-
+    /**
+     * @param $params
+     * @param $userParams
+     * @return array
+     */
     protected function getDependencies($params ,$userParams)
     {
         $dependencies = [];
@@ -99,6 +104,12 @@ trait Singleton
         return $dependencies;
     }
 
+    /**
+     * @param       $func
+     * @param array $params
+     * @return mixed
+     * @throws RuntimeException
+     */
     public static function invokeFunction($func,$params=[])
     {
 
@@ -136,13 +147,14 @@ trait Singleton
     }
 
     /**
-     * @unsupport static method
      * @param       $method
      * @param array $params
+     * @return mixed
+     * @throws RuntimeException
      */
     public static function invokeMethod($method, $params = [])
     {
-        $controller = static::getInstance()->make($method[0]) ;
+        $controller = static::getInstance()->make($method[0], $params) ;
         if(!method_exists($controller,$method [1]))
         {
             throw new RuntimeException('invoke method failed:' . $method[0] . "::" . $method[1] . ",method not exist");
@@ -189,5 +201,6 @@ trait Singleton
     public function clearInstance()
     {
         static::$instance = null ;
+        return null ;
     }
 }

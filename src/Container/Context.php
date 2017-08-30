@@ -13,6 +13,7 @@ use Rookiejin\Swoole\Http\Request;
 use Rookiejin\Swoole\Http\Response;
 use Rookiejin\Swoole\Http\Route;
 use Rookiejin\Swoole\Http\Router;
+use Rookiejin\Swoole\Http\Session;
 use Swoole\Http\Request as SwRequest;
 use Swoole\Http\Response as SwResponse;
 
@@ -43,14 +44,26 @@ class Context implements ContextInterface
      */
     protected $response;
 
+    /**
+     * @var Session
+     */
+    protected $session ;
+
+
+    public function __construct()
+    {
+        self::$instance = & $this;
+    }
+
 
     public function init(SwRequest $request,SwResponse $response)
     {
         $this->request = $this->initRequest($request) ;
 
+        $this->session = $this->initSession();
+
         $this->response = $this->initResponse($response) ;
     }
-
 
     /**
      * @return Route $route
@@ -88,6 +101,21 @@ class Context implements ContextInterface
         return $this->make(Response::class,['response' => $swResponse]);
     }
 
+    protected function initSession()
+    {
+        $config = app('config')->app ;
+        if(isset($config ['session']['save_path']))
+        {
+            $path = $config ['session'] ['save_path'] ;
+        }
+        else{
+            $path = storage_path() . 'framework/session' ;
+        }
+        if(!is_dir($path)){
+            @mkdir($path,0777,true) ;
+        }
+    }
+
     /**
      * @param SwRequest  $swRequest
      * @param SwResponse $swResponse
@@ -102,7 +130,7 @@ class Context implements ContextInterface
         /**
          * 这里应该是纯字符串 html 等等
          */
-        $response = $route->execAction();
+        $response = $route->execAction($this);
 
         return $this->response( $response );
     }
@@ -122,6 +150,22 @@ class Context implements ContextInterface
         $this->response->respond($response);
 
         return $this->kill();
+    }
+
+    /**
+     * @return Request
+     */
+    public function getRequest()
+    {
+        return $this->request ;
+    }
+
+    /**
+     * @return Response
+     */
+    public function getResponse()
+    {
+        return $this->response ;
     }
 
     /**

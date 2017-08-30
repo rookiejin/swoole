@@ -140,7 +140,6 @@ class HttpServer implements Server, ServerEvent
         if ($this->debug) {
             Log::debug("worker_id :: " . $server->worker_id);
         }
-
         return true;
     }
 
@@ -159,8 +158,7 @@ class HttpServer implements Server, ServerEvent
             ]);
         }
         try {
-            $ctx = new Context();
-            $ctx->request($request ,$response);
+            Context::getInstance()->request($request,$response);
         }
         catch (RuntimeException $e) {
             $response->status(500) ;
@@ -172,7 +170,6 @@ class HttpServer implements Server, ServerEvent
             $response->status($status);
             $response->end($message);
         }
-        unset($ctx);
         return ;
     }
 

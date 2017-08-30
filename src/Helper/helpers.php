@@ -21,7 +21,9 @@ function config($module, $item = null)
     return $config->{$module} ;
 }
 
-
+/**
+ * @return \Rookiejin\Swoole\Container\Context
+ */
 function context()
 {
     if(app()->hasStartedServer)
@@ -30,6 +32,30 @@ function context()
     }
 
     throw new RuntimeException('服务器还没有启动不能调用上下文!') ;
+}
+
+
+/**
+ * 返回app的目录
+ */
+function app_path()
+{
+    return app()->getPath();
+}
+
+/**
+ * storage 的 path
+ */
+function storage_path( $path = null )
+{
+    if(is_null($path))
+    {
+        return app_path() . 'storage';
+    }
+    else{
+        $path = ltrim($path , '/\\');
+        return storage_path() . $path ;
+    }
 }
 
 

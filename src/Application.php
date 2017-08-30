@@ -52,8 +52,12 @@ class Application extends Container
         $this->app_path = $path . DIRECTORY_SEPARATOR;
         self::$self = & $this ;
     }
-    
-    
+
+    public function getPath()
+    {
+        return $this->app_path ;
+    }
+
     public function bootstrap()
     {
         $this->registerPaths();

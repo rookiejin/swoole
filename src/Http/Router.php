@@ -110,32 +110,22 @@ class Router
                 {
                     $controller = $this->defaultNamespace . $controller ;
                 }
-                if(! class_exists($controller))
+                if(!app('config')->app ['debug'])
                 {
-                    throw new InitException("控制器不存在::" . $controller);
+                    if(! class_exists($controller))
+                    {
+                        throw new InitException("控制器不存在::" . $controller);
+                    }
+                    if(! method_exists($controller ,$action))
+                    {
+                        throw new InitException("控制器方法不存在::" . $controller . "::" . $action);
+                    }
                 }
-                if(! method_exists($controller ,$action))
-                {
-                    throw new InitException("控制器方法不存在::" . $controller . "::" . $action);
-                }
-
                 $routeObject->setCallAble([$controller,$action]);
             }
             $routes[$uriWithPattern['pattern']] = $routeObject ;
         }
         return $routes ;
-    }
-
-    public function dispatch(Request $request)
-    {
-        try{
-            $uri = $this->parseUri($request->getServer());
-            $method = $this->parseMethod($request->getServer());
-            $route = $this->getRoute($uri,$method);
-            return Dispatcher::dispatch($route['controller'] ,$route ['action']);
-        }catch (HttpNotFoundException $e){
-            return $e->getMessage();
-        }
     }
 
     /**

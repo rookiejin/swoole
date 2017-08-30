@@ -12,7 +12,7 @@ namespace Rookiejin\Swoole\Http;
 class Response
 {
 
-    protected $headers = [];
+    protected $headers = ['Server' => 'Swoole-MVC'];
 
     protected $statusCode = 200;
 
@@ -20,7 +20,7 @@ class Response
 
     protected $request = null;
 
-    protected $swResponse = null ;
+    protected $swResponse = null;
 
     /**
      * Response constructor.
@@ -29,11 +29,15 @@ class Response
      */
     public function __construct(\Swoole\Http\Response $response)
     {
-        $this->swResponse = $response ;
+        $this->swResponse = $response;
     }
 
     public function addHeader(array $headers)
     {
+        // 第一个字母大写
+        foreach ($headers as $key => $value) {
+            $headers [ strtolower(str_replace('_', '-', $key)) ] = $value;
+        }
         $this->headers = array_merge($this->headers, $headers);
 
         return $this;
@@ -61,12 +65,25 @@ class Response
     }
 
     /**
-     * @param array $cookies
+     * @param string $key
+     * @param string $value
+     * @param int    $expire
+     * @param string $path
+     * @param string $domain
+     * @param bool   $secure
+     * @param bool   $httponly
      * @return $this
      */
-    public function addCookie(array $cookies)
+    public function addCookie(string $key, string $value = '', int $expire = 0, string $path = '/', string $domain = '', bool $secure = false, bool $httponly = false)
     {
-        $this->cookies = array_merge($this->cookies, $cookies);
+        $this->cookies [] = ['key'      => $key,
+                             'value'    => $value,
+                             'expire'   => $expire,
+                             'path'     => $path,
+                             'domain'   => $domain,
+                             'secure'   => $secure,
+                             'httponly' => $httponly,
+        ];
 
         return $this;
     }
@@ -100,12 +117,28 @@ class Response
 
     public function sendHeader()
     {
-        $this->swResponse->header('Content-Type','text/html');
+        foreach ($this->getHeader() as $key => $value) {
+            $this->swResponse->header($key, $value);
+        }
     }
 
     public function sendCookies()
     {
-        $this->swResponse->cookie('testkey','testvalue',3600,'/','localhost');
+        if(!empty($this->cookies))
+        {
+            foreach ($this->cookies as $key => $val)
+            {
+                $this->swResponse->cookie(
+                    $val ['key'] ,
+                    $val ['value'],
+                    (int) $val ['expire'],
+                    $val ['path'] === '' ? '/' : $val ['path'] ,
+                    $val ['domain'] === '' ? '' : $val ['domain'] ,
+                    $val['secure'] ,
+                    $val ['httponly']
+                );
+            }
+        }
     }
 
     public function sendStatus()
