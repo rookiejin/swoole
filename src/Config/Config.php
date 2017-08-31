@@ -21,6 +21,19 @@ class Config
         if ($this->has($key)) {
             return $this->config[ $key ];
         }
+
+        if( strstr($key ,'.') !== false)
+        {
+            $keys = explode('.',$key);
+            if( ($collect = $this->get($keys [0])) === null)
+            {
+                return null ;
+            }
+            else{
+                unset($keys[0]) ;
+                return $collect->get(implode('.',$keys));
+            }
+        }
         return null;
     }
 
@@ -51,29 +64,14 @@ class Config
                 Config::load($path . DIRECTORY_SEPARATOR . $dirs [$i]) ;
             }
             else{
-
-            }
-
-        }
-
-
-
-
-        foreach ($dirs as $key => $val) {
-            if (!in_array($val, ['.', '..'])) {
-                if (is_dir($path . DIRECTORY_SEPARATOR . $val)) {
-                    Config::load($path . DIRECTORY_SEPARATOR . $val);
-                } else {
-                    $tmp = require_once $path . DIRECTORY_SEPARATOR . $val;
-                    if (is_array($tmp)) {
-                         $val = str_replace('.php','',$val);
-                        Application::getInstance('config')->set($val, $tmp);
-                    }
-                    unset($tmp);
+                $tmp = require_once $path . DIRECTORY_SEPARATOR . $dirs [$i] ;
+                if(is_array($tmp))
+                {
+                    app('config')->set(str_replace('.php' ,'',$dirs [$i]), $tmp);
                 }
+                unset($tmp);
             }
         }
-        unset($dirs);
     }
 
     /**

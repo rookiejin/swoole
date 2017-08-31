@@ -27,7 +27,7 @@ class CliLoger extends AbstractLogger
         {
             case LogLevel::INFO :
             {
-                $color = "\033[1;34m [ INFO ] " . $this->getDate() ;
+                $color = "\033[1;34m [ INFO  ] " . $this->getDate() ;
                 break ;
             }
             case LogLevel::ERROR :

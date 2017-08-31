@@ -51,8 +51,6 @@ class HttpServer implements Server, ServerEvent
 
     private $mode = SWOOLE_PROCESS;
 
-    private $debug = false;
-
     /**
      * HttpServer constructor.
      *
@@ -78,37 +76,52 @@ class HttpServer implements Server, ServerEvent
             $this->setting = array_merge($config['setting']);
         }
         if (isset($config['host']) && !empty($config['host'])) {
+            echo 1;
             $this->host = $config ['host'];
         }
         if (isset($config['port']) && !empty($config['port'])) {
             $this->port = $config ['port'];
-        }
-
-        if (!empty($config ['debug'])) {
-            $this->debug = $config ['debug'];
         }
     }
 
     protected function initServer()
     {
         $this->server = new \Swoole\Http\Server($this->host, $this->port, $this->mode, $this->socket_type);
+
         $this->server->set($this->setting);
-        $this->server->on('Start', [$this, 'onMasterStart']);
-        $this->server->on('ManagerStart', [$this, 'onManagerStart']);
-        $this->server->on('WorkerStart', [$this, 'onWorkerStart']);
-        $this->server->on('Connect', [$this, 'onConnect']);
-        $this->server->on('Receive', [$this, 'onReceive']);
-        $this->server->on('Close', [$this, 'onClose']);
-        $this->server->on('WorkerStop', [$this, 'onWorkerStop']);
-        $this->server->on('Request', [$this, 'onRequest']);
-        $this->server->on('Task', [$this, 'onTask']);
-        $this->server->on('Finish', [$this, 'onFinish']);
+
+        $this->server->on(SwEvent::START, [$this, 'onMasterStart']);
+
+        $this->server->on(SwEvent::MANAGER_START, [$this, 'onManagerStart']);
+
+        $this->server->on(SwEvent::WORKER_START, [$this, 'onWorkerStart']);
+
+        $this->server->on(SwEvent::CONNECT, [$this, 'onConnect']);
+
+        $this->server->on(SwEvent::RECEIVE, [$this, 'onReceive']);
+
+        $this->server->on(SwEvent::CLOSE, [$this, 'onClose']);
+
+        $this->server->on(SwEvent::WORKER_STOP, [$this, 'onWorkerStop']);
+
+        $this->server->on(SwEvent::REQUEST, [$this, 'onRequest']);
+
+        $this->server->on(SwEvent::TASK, [$this, 'onTask']);
+
+        $this->server->on(SwEvent::FINISH, [$this, 'onFinish']);
+
         if (is_array($this->listen)) {
+
             foreach ($this->listen as $val) {
+
                 if (!$val['host'] || !$val['port']) {
+
                     continue;
+
                 }
+
                 $this->server->addlistener($val['host'], $val['port'], $this->socket_type);
+
             }
         }
     }
@@ -118,8 +131,8 @@ class HttpServer implements Server, ServerEvent
         if (is_null($this->master_pid_file)) {
             $this->master_pid_file = "/tmp/swoole.{$this->port}.pid";
         }
-        if ($this->debug) {
-            Log::debug("server master started::pid\t" . $server->master_pid);
+        if (app()->debug) {
+            Log::debug("server master started::pid->\t" . $server->master_pid);
         }
         try {
             swoole_async_writefile($this->master_pid_file, $server->master_pid);
@@ -131,27 +144,37 @@ class HttpServer implements Server, ServerEvent
         return true;
     }
 
-    public function onManagerStart()
+    public function onManagerStart(\Swoole\Server $server)
     {
+
+        if (app()->debug) {
+            Log::debug("manager started::pid -> \t" . $server->manager_pid);
+        }
+
         return true;
     }
 
     public function onWorkerStart(\Swoole\Http\Server $server)
     {
-        if ($this->debug) {
-            Log::debug("worker_id :: " . $server->worker_id);
+        if (app()->debug) {
+            Log::debug("worker started::worker_id ->\t" . $server->worker_id);
         }
+
         return true;
     }
 
-    public function onWorkerStop()
+    public function onWorkerStop(\Swoole\Http\Server $server, $worker_id)
     {
+        if (app()->debug) {
+            Log::debug("worker stoped::worker_id->\t" . $worker_id);
+        }
+
         return true;
     }
 
     public function onRequest(Request $request, Response $response)
     {
-        if ($this->debug) {
+        if (app()->debug) {
             Log::debug([
                 'uri'       => $request->server ['request_uri'],
                 'method'    => $request->server ['request_method'],
@@ -160,51 +183,43 @@ class HttpServer implements Server, ServerEvent
         }
         try {
             $ctx = Context::getInstance();
-            $res = $ctx->request($request ,$response);
+            $res = $ctx->request($request, $response);
         }
         catch (RuntimeException $e) {
-            $response->status(500) ;
+            $response->status(500);
             $res = $e->getMessage();
         }
-        catch (\Exception $e)
-        {
-            list($status ,$message) = $this->handleException($e);
+        catch (\Exception $e) {
+            list($status, $res) = $this->handleException($e);
             $response->status($status);
-            $res = $e->getMessage();
-        }
-        finally{
-            if(isset($ctx))
-            {
+        } finally {
+            if (isset($ctx)) {
                 $ctx->clearInstance();
             }
-            if(isset($res))
-            {
+            if (isset($res)) {
                 $response->end($res);
-            }
-            else{
+            } else {
                 $response->end('');
             }
         }
-        return ;
+
+        return;
     }
 
 
-    public function handleException(\Exception $exception) : array
+    public function handleException(\Exception $exception): array
     {
-        if($exception instanceof HttpException)
-        {
-            if($exception instanceof MethodNotAllowedException)
-            {
+        if ($exception instanceof HttpException) {
+            if ($exception instanceof MethodNotAllowedException) {
                 return [405, $exception->getMessage()];
             }
-            if($exception instanceof NotFoundException || $exception instanceof HttpNotFoundException)
-            {
+            if ($exception instanceof NotFoundException || $exception instanceof HttpNotFoundException) {
                 return [404, $exception->getMessage()];
             }
         }
-        return [500,'server error'];
+        return [500, $exception->getMessage()];
     }
-    
+
 
     /**
      * @param $setting
@@ -212,7 +227,9 @@ class HttpServer implements Server, ServerEvent
      */
     public function run()
     {
+        Log::info("server is running @ {$this->host}::{$this->port}");
         $this->server->start();
+
     }
 
     /**
@@ -222,7 +239,10 @@ class HttpServer implements Server, ServerEvent
      */
     public function send($client_id, $data)
     {
-        // TODO: Implement send() method.
+        if(app()->debug)
+        {
+            Log::debug("server send data to client::->\t" . $client_id );
+        }
     }
 
     /**
@@ -231,7 +251,10 @@ class HttpServer implements Server, ServerEvent
      */
     public function close($client_id)
     {
-        // TODO: Implement close() method.
+        if(app()->debug)
+        {
+            Log::debug("server close client::->\t" . $client_id );
+        }
     }
 
     /**
@@ -246,11 +269,12 @@ class HttpServer implements Server, ServerEvent
     /**
      * @param $server
      * @param $worker_id
-     * @return mixed
      */
-    public function onStart($server, $worker_id)
+    public function onStart($server,$worker_id)
     {
-        // TODO: Implement onStart() method.
+        if (app()->debug) {
+            Log::debug("server run success");
+        }
     }
 
     /**
@@ -261,7 +285,9 @@ class HttpServer implements Server, ServerEvent
      */
     public function onConnect($server, $client_id, $from_id)
     {
-        // TODO: Implement onConnect() method.
+        if (app()->debug) {
+            Log::debug("client ::@{$client_id} connected");
+        }
     }
 
     /**

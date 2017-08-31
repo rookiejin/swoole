@@ -23,6 +23,18 @@ class Response
     protected $swResponse = null;
 
     /**
+     * 防止XSS跨站攻击 ，默认开启 .
+     * @var bool
+     */
+    protected $cookie_httponly = true ;
+
+    /**
+     * @var bool 只有在https的情况下有效
+     */
+    protected $cookie_secure = false ;
+
+
+    /**
      * Response constructor.
      *
      * @param \Swoole\Http\Response $response
@@ -134,8 +146,8 @@ class Response
                     (int) $val ['expire'],
                     $val ['path'] === '' ? '/' : $val ['path'] ,
                     $val ['domain'] === '' ? '' : $val ['domain'] ,
-                    $val['secure'] ,
-                    $val ['httponly']
+                    false ,
+                    false
                 );
             }
         }

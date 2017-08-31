@@ -7,13 +7,15 @@
  */
 
 namespace Rookiejin\Swoole\Container;
+
 use Rookiejin\Swoole\Application;
 use Rookiejin\Swoole\Helper\Singleton;
 use Rookiejin\Swoole\Http\Request;
 use Rookiejin\Swoole\Http\Response;
 use Rookiejin\Swoole\Http\Route;
 use Rookiejin\Swoole\Http\Router;
-use Rookiejin\Swoole\Http\Session;
+use Rookiejin\Swoole\Session\Driver\FileDriver;
+use Rookiejin\Swoole\Session\Session;
 use Swoole\Http\Request as SwRequest;
 use Swoole\Http\Response as SwResponse;
 
@@ -26,9 +28,9 @@ use Swoole\Http\Response as SwResponse;
  * 3. context('session')->set();
  * 4. context('cookie')->set();
  * 5. context('server')->getinfo();
+ *
  * @package Rookiejin\Swoole\Container
  */
-
 class Context implements ContextInterface
 {
 
@@ -47,22 +49,22 @@ class Context implements ContextInterface
     /**
      * @var Session
      */
-    protected $session ;
+    protected $session;
 
 
     public function __construct()
     {
-        self::$instance = & $this;
+        self::$instance = &$this;
     }
 
 
-    public function init(SwRequest $request,SwResponse $response)
+    public function init(SwRequest $request, SwResponse $response)
     {
-        $this->request = $this->initRequest($request) ;
+        $this->request = $this->initRequest($request);
+
+        $this->response = $this->initResponse($response);
 
         $this->session = $this->initSession();
-
-        $this->response = $this->initResponse($response) ;
     }
 
     /**
@@ -73,7 +75,7 @@ class Context implements ContextInterface
         /**
          * @var Router
          */
-        $router = Application::getInstance('router') ;
+        $router = Application::getInstance('router');
 
         /**
          * @var Route
@@ -88,7 +90,7 @@ class Context implements ContextInterface
      */
     protected function initRequest(SwRequest $swRequest)
     {
-        return $this->make(Request::class,['request' => $swRequest]) ;
+        return $this->make(Request::class, ['request' => $swRequest]);
     }
 
     /**
@@ -98,22 +100,18 @@ class Context implements ContextInterface
      */
     protected function initResponse(SwResponse $swResponse)
     {
-        return $this->make(Response::class,['response' => $swResponse]);
+        return $this->make(Response::class, ['response' => $swResponse]);
     }
 
     protected function initSession()
     {
-        $config = app('config')->app ;
-        if(isset($config ['session']['save_path']))
-        {
-            $path = $config ['session'] ['save_path'] ;
-        }
-        else{
-            $path = storage_path() . 'framework/session' ;
-        }
-        if(!is_dir($path)){
-            @mkdir($path,0777,true) ;
-        }
+        $config = config('app.session');
+
+        $driver = self::make(isset($config ['driver']) ? $config ['driver']: FileDriver::class , ['path' => isset($config ['path']) ? $config['path']:null ]);
+
+        $this->session = self::make(Session::class ,['driver' => $driver]) ;
+
+        $this->session->init($this->getRequest(), $config);
     }
 
     /**
@@ -121,33 +119,35 @@ class Context implements ContextInterface
      * @param SwResponse $swResponse
      * @return null
      */
-    public function request(SwRequest $swRequest ,SwResponse $swResponse)
+    public function request(SwRequest $swRequest, SwResponse $swResponse)
     {
-        $this->init($swRequest ,$swResponse);
+        $this->init($swRequest, $swResponse);
 
-        $route = $this->route() ;
+        $route = $this->route();
 
         /**
          * 这里应该是纯字符串 html 等等
          */
         $response = $route->execAction($this);
 
-        return $this->response( $response );
+        $this->response();
+
+        return $response;
     }
 
-
-    public function response($response)
+    /**
+     * @return void
+     */
+    public function response()
     {
         /**
          * 发送响应头
          */
-        $this->response->sendHeader() ;
+        $this->response->sendHeader();
 
-        $this->response->sendCookies() ;
+        $this->response->sendCookies();
 
-        $this->response->sendStatus() ;
-
-        return $response ;
+        $this->response->sendStatus();
     }
 
     /**
@@ -155,7 +155,7 @@ class Context implements ContextInterface
      */
     public function getRequest()
     {
-        return $this->request ;
+        return $this->request;
     }
 
     /**
@@ -163,7 +163,7 @@ class Context implements ContextInterface
      */
     public function getResponse()
     {
-        return $this->response ;
+        return $this->response;
     }
 
     /**

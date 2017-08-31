@@ -17,7 +17,7 @@ class CookieFilter implements Filter
      */
     public static function parse($var)
     {
-        // TODO: Implement parse() method.
+        return $var ;
     }
 
 }

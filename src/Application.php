@@ -21,15 +21,37 @@ class Application extends Container
 {
     protected $version = "0.1";
 
-    protected $name = "app" ;
+    protected $name = "app";
 
-    protected $app_path = null ;
+    /**
+     * 程序根目录 .
+     *
+     * @var null|string
+     */
+    protected $app_path = null;
 
-    protected $config_path = null ;
 
-    public $debug = false ;
+    /**
+     * @var null app_path / config
+     */
+    protected $config_path = null;
 
-    protected $count = [] ;
+
+    /**
+     * @var null 存储目录 .
+     */
+    protected $storage_path = null;
+
+
+    /**
+     * @var null 静态资源目录
+     */
+    protected $public_path = null;
+
+    /**
+     * @var bool is in debug
+     */
+    public $debug = false;
 
     /**
      * @var bool app 有没有被初始化
@@ -39,23 +61,37 @@ class Application extends Container
     /**
      * @var bool 服务器有没有启动
      */
-    public $hasStartedServer = false ;
+    public $hasStartedServer = false;
 
     /**
      * @var HttpServer
      */
     protected $server = null;
 
-    public function __construct( $path )
+
+    protected $initObject
+        = [
+            'config' => Config::class,
+            'router' => Router::class,
+        ];
+
+
+    const DS = DIRECTORY_SEPARATOR;
+
+    public function __construct($path)
     {
-        $path = rtrim($path , '/\\');
+        $path = realpath(rtrim($path, '/\\'));
+
+        if (!is_dir($path)) {
+            throw new InitException("{$path} 不是一个有效的目录");
+        }
         $this->app_path = $path . DIRECTORY_SEPARATOR;
-        self::$self = & $this ;
+        self::$self     = &$this;
     }
 
     public function getPath()
     {
-        return $this->app_path ;
+        return $this->app_path;
     }
 
     public function bootstrap()
@@ -68,64 +104,65 @@ class Application extends Container
 
         $this->initRouter();
 
-        $this->hasBootstrap = true ;
+        $this->hasBootstrap = true;
     }
 
     protected function registerPaths()
     {
-        $config_path = $this->app_path . '..' . DIRECTORY_SEPARATOR . 'config' . DIRECTORY_SEPARATOR ;
-        if(! is_dir($config_path)){
-            throw new InitException('config dir is not exists') ;
+        if (!is_dir($config_path = $this->app_path . self::DS . 'config' . self::DS)) {
+            @mkdir($config_path, 0755, true);
         }
-        $this->config_path = realpath( $config_path ) ;
+
+        $this->config_path = $config_path;
+
+        if (!is_dir($public_path = $this->app_path . self::DS . 'public' . self::DS)) {
+            @mkdir($public_path, 0755, true);
+        }
+
+        $this->public_path = $public_path;
+
+        if (!is_dir($storage_path = $this->app_path . self::DS . 'storage' . self::DS)) {
+            @mkdir($storage_path, 0755, true);
+        }
+
+        $this->storage_path = $storage_path;
     }
 
 
     protected function registerObject()
     {
-        $class = [
-            'config' => Config::class ,
-            'router' => Router::class ,
-        ];
-        foreach ($class as $key => $val){
-            $this->setAlias($key , $val);
+        foreach ($this->initObject as $key => $val) {
+            $this->setAlias($key, $val);
         }
     }
 
-
     protected function loadConfig()
     {
+
         Config::load($this->config_path);
-        if($this->get('config')->app ['debug'])
-        {
+
+        $this->debug = !is_null(config('app', 'true')) ?: false;
+
+        if ($this->debug) {
             Log::debug("config loaded");
         }
     }
 
     public function initRouter()
     {
-        $router_config = $this->config->router ;
+        $router_config = $this->config->router;
         /**
          * @var Router
          */
         $this->router->init($router_config);
-        if($this->get('config')->app ['debug'])
-        {
+        if ($this->debug) {
             Log::debug("router loaded");
         }
     }
 
-    /**
-     * 测试共享内存
-     */
-    public function getCount()
-    {
-        return $this->count ++ ;
-    }
-
     public function run()
     {
-        $this->server = $this->make(HttpServer::class, ['config' => $this->config->server]);
+        $this->server           = $this->make(HttpServer::class, ['config' => config('server')]);
         $this->hasStartedServer = true;
         $this->server->run();
     }
